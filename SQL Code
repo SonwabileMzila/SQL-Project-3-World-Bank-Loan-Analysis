@@ -1,0 +1,140 @@
+How many Countries have taken Loan From World Bank?
+-- There are total 137 Countries that have taken a Loan From World Bank
+
+SELECT
+           COUNT(DISTINCT country)
+   FROM "IDA_Statement_Of_Credits_and_Grants_-_Historical_Data"
+
+
+
+Top 5 Countries with highest Loan amount.
+--India has the Highest Loan amount($6934 B) then Bangladesh, Pakistan, Vietnam, Ethiopia
+
+      country,
+         CONCAT('$',ROUND(SUM(REPLACE("Original Principal Amount",',','')::numeric)/1000000000,2) -
+         ROUND(SUM(REPLACE("Cancelled Amount",',','')::numeric)/1000000000,2)
+         ,'B')"All Loan Amount"
+ FROM "IDA_Statement_Of_Credits_and_Grants_-_Historical_Data"
+        GROUP BY 1
+ order by SUM(REPLACE("Original Principal Amount",',','')::numeric)-SUM(REPLACE("Cancelled 
+ Amount",',','')::numeric desc 
+        LIMIT 5
+        
+        
+    Top 5 Countries with highest Due amount    
+    -- INDIA has taken about ($3385.50B) of the Due Loan and Bangladesh, Pakistan, Vietnam and Nigeria
+    
+    SELECT 
+          country,
+           CONCAT('$',ROUND(SUM(REPLACE("Due to IDA",',','')::numeric)/1000000000,2),'B') as "Due Loan 
+           Amount"
+FROM "IDA_Statement_Of_Credits_and_Grants_-_Historical_Data"
+           GROUP BY 1
+order by SUM(REPLACE("Due to IDA",',','')::numeric) desc 
+           LIMIT 5
+   
+   
+   Top 5 Countries who have taken most loan amount in percentage
+   -- INDIA has taken about 14% of the total Loan and Bangladesh(7%), Pakistan(6%), Vietnam(5%) and Ethiopia(5%)
+   
+   WITH total_loan_per_country AS(
+   SELECT 
+          country,
+          ROUND(SUM(REPLACE("Original Principal Amount",',','')::numeric)-
+              SUM(REPLACE("Cancelled Amount",',','')::numeric)
+             /1000000000,2) as "All Loan Amount"
+  FROM "IDA_Statement_Of_Credits_and_Grants_-_Historical_Data"
+       GROUP BY 1
+ ORDER BY SUM(REPLACE("Original Principal Amount",',','')::numeric)-
+        SUM(REPLACE("Cancelled Amount",',','')::numeric) desc 
+)SELECT 
+     country,
+    CONCAT(ROUND(("All Loan Amount"/SUM("All Loan Amount") OVER())*100.0,2),'%') as total_loan_perc 
+FROM total_loan_per_country
+     GROUP BY 1,"All Loan Amount" ORDER BY ("All Loan Amount"/ SUM("All Loan Amount") OVER()) desc Limit 5
+     
+   
+   Project First Approved Loan for India.
+   -- The First Loan which has been approved by World Bank to India was on 20-Jun-1961 which was for the Project named HIGHWAYS
+   
+   SELECT
+       "Project Name",
+       "Board Approval Date"
+FROM "IDA_Statement_Of_Credits_and_Grants_-_Historical_Data"
+     WHERE country ='India'
+LIMIT 1
+
+
+   Top 5 Project in India having Highest Loan.
+   -- India has taken Highest Loan amount for Elementary Education($380.70 B) then PMGSY Rural Roads Project($259.64 B)
+   
+   SELECT 
+     "Project Name",
+     CONCAT('$',ROUND(SUM(REPLACE("Original Principal Amount",',','')::numeric)/1000000000,2) -
+    ROUND(SUM(REPLACE("Cancelled Amount",',','')::numeric)/1000000000,2)
+    ,'B') as "Total Loan Amount" FROM "IDA_Statement_Of_Credits_and_Grants_-_Historical_Data" 
+   WHERE country='India' GROUP BY 1
+   order by SUM(REPLACE("Original Principal Amount",',','')::float) desc LIMIT 5
+   
+   Top 5 project in India having highest loan and the Due amount of those loans.
+   -- India has taken Highest Loan amount for Elementary Education($292.30 B) then PMGSY Rural Roads Project($149.67 B)
+   
+    SELECT
+    "Project Name",
+    CONCAT('$',ROUND(SUM(REPLACE("Original Principal Amount",',','')::numeric)/1000000000,2) -
+    ROUND(SUM(REPLACE("Cancelled Amount",',','')::numeric)/1000000000,2)
+    ,'B') as "Total Loan Amount",
+   CONCAT('$',ROUND(SUM(REPLACE("Due to IDA",',','')::numeric)/1000000000,2),'B') as "Due Loan 
+   Amount"
+  FROM "IDA_Statement_Of_Credits_and_Grants_-_Historical_Data"
+ WHERE country='India'
+ GROUP BY 1
+ order by SUM(REPLACE("Original Principal Amount",',','')::numeric)-
+ SUM(REPLACE("Cancelled Amount",',','')::numeric) desc
+ LIMIT 5
+ 
+ 
+ Total number of loan projects that have fully repaid the loan.
+ -- There are a total 42 Projects for which India has taken the loan and Fully Repaid those Loans.
+ 
+ WITH CTE AS(
+        SELECT 
+                  "Project Name",
+                  CONCAT('$',ROUND(SUM(REPLACE("Original Principal Amount",',','')::numeric)/1000000000,2)
+                  -ROUND(SUM(REPLACE("Cancelled Amount",',','')::numeric)/1000000000,2),'B') as "Total Loan  
+                  Amount"
+ FROM "IDA_Statement_Of_Credits_and_Grants_-_Historical_Data" 
+                WHERE country='India' and "Credit Status"  IN('Fully Repaid')
+       GROUP BY 1
+               order by SUM(REPLACE("Original Principal Amount",',','')::numeric) - 
+               SUM(REPLACE("Cancelled Amount",',','')::numeric) desc
+        )
+  SELECT
+        COUNT(*) as "total Count of paid Loan"
+  FROM CTE
+  
+  
+  Top 5 Maximum approval time in project for India
+  -- UPPER INDRAVATI POWE was the Project for which the Processing time is the longest having approx 12 years.
+  
+  SELECT 
+        DISTINCT "Project Name",
+        ROUND(("Closed Date (Most Recent)"::date - 
+        "Board Approval Date"::date)/365.25,2) as "Loan Process Time(years)"
+ FROM "IDA_Statement_Of_Credits_and_Grants_-_Historical_Data"
+       WHERE country ='India' 
+ ORDER BY 2 desc
+  
+ 
+   
+   Top 5 Minimum approval time in project for India
+   -- MOZORAM ROADS Project has been the project which has been quickest in approval which was 71 days.
+   
+   SELECT 
+        DISTINCT "Project Name",
+        "Closed Date (Most Recent)"::date - 
+        "Board Approval Date"::date as "Loan Process Time(days)"
+FROM "IDA_Statement_Of_Credits_and_Grants_-_Historical_Data"
+        WHERE country ='India' 
+ORDER BY 2 
+        LIMIT 5
